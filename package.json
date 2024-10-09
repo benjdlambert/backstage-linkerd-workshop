@@ -54,5 +54,6 @@
     "*.{json,md}": [
       "prettier --write"
     ]
-  }
+  },
+  "packageManager": "yarn@4.5.0"
 }
