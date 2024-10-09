@@ -2,8 +2,18 @@ app:
   title: Scaffolded Backstage App
   baseUrl: http://localhost:3000
 
+  extensions:
+    - page:catalog:
+        config:
+          path: /
+    - entity-card:linkerd/is-meshed: false
+
+  routes:
+    bindings:
+      catalog.createComponent: catalog-import.importPage
+
 organization:
-  name: My Company
+  name: Test Company
 
 backend:
   # Used for enabling authentication, secret is shared by all backend plugins
@@ -18,7 +28,7 @@ backend:
     # Uncomment the following host directive to bind to specific interfaces
     # host: 127.0.0.1
   csp:
-    connect-src: ["'self'", 'http:', 'https:']
+    connect-src: ["'self'", "http:", "https:"]
     # Content-Security-Policy directives follow the Helmet format: https://helmetjs.github.io/#reference
     # Default Helmet Content-Security-Policy values can be removed by setting the key to false
   cors:
@@ -29,8 +39,21 @@ backend:
   # The production database configuration is stored in app-config.production.yaml
   database:
     client: better-sqlite3
-    connection: ':memory:'
+    connection: ":memory:"
   # workingDirectory: /tmp # Use this to configure a working directory for the scaffolder, defaults to the OS temp-dir
+
+kubernetes:
+  serviceLocatorMethod:
+    type: "multiTenant"
+  clusterLocatorMethods:
+    - type: "config"
+      clusters:
+        # taken from kubeconfig, might need to be changed for you. Run `kubectl config view --minify --output json` to find the server URL
+        - name: "kind"
+          authProvider: "serviceAccount"
+          url: https://127.0.0.1:50503
+          serviceAccountToken: ${KIND_SERVICE_ACCOUNT_TOKEN}
+          skipTLSVerify: true
 
 integrations:
   github:
@@ -43,38 +66,13 @@ integrations:
     #   apiBaseUrl: https://ghe.example.net/api/v3
     #   token: ${GHE_TOKEN}
 
-proxy:
-  ### Example for how to add a proxy endpoint for the frontend.
-  ### A typical reason to do this is to handle HTTPS and CORS for internal services.
-  # endpoints:
-  #   '/test':
-  #     target: 'https://example.com'
-  #     changeOrigin: true
-
-# Reference documentation http://backstage.io/docs/features/techdocs/configuration
-# Note: After experimenting with basic setup, use CI/CD to generate docs
-# and an external cloud storage when deploying TechDocs for production use-case.
-# https://backstage.io/docs/features/techdocs/how-to-guides#how-to-migrate-from-techdocs-basic-to-recommended-deployment-approach
-techdocs:
-  builder: 'local' # Alternatives - 'external'
-  generator:
-    runIn: 'docker' # Alternatives - 'local'
-  publisher:
-    type: 'local' # Alternatives - 'googleGcs' or 'awsS3'. Read documentation for using alternatives.
-
 auth:
   # see https://backstage.io/docs/auth/ to learn about auth providers
   providers:
     # See https://backstage.io/docs/auth/guest/provider
     guest: {}
 
-scaffolder:
-  # see https://backstage.io/docs/features/software-templates/configuration for software template options
-
 catalog:
-  import:
-    entityFilename: catalog-info.yaml
-    pullRequestBranchName: backstage-integration
   rules:
     - allow: [Component, System, API, Resource, Location]
   locations:
