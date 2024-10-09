@@ -9,7 +9,7 @@ export default createApp({
   features: [
     catalogPlugin,
     linkerdPlugin,
-    signInPageModule,
+    // signInPageModule,
     scmModule,
     catalogImportPlugin,
   ],
