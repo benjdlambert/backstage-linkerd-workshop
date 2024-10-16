@@ -49,7 +49,7 @@ And then we need to add the plugin to the backend. Open `packages/backend/src/in
 
 ```ts
 // Add in the kubernetes backend plugin
-backend.add(import('@backstage/plugin-kubernetes-backend'));
+backend.add(import("@backstage/plugin-kubernetes-backend"));
 ```
 
 ### Step 1: Configure the Kubernetes Plugin
@@ -136,12 +136,12 @@ We can run the above command with `export` at the beginning in the same terminal
 ```yaml
 kubernetes:
   serviceLocatorMethod:
-    type: 'multiTenant'
+    type: "multiTenant"
   clusterLocatorMethods:
-    - type: 'config'
+    - type: "config"
       clusters:
-        - name: 'workshop-cluster'
-          authProvider: 'serviceAccount'
+        - name: "workshop-cluster"
+          authProvider: "serviceAccount"
           url: SERVER_URL
           serviceAccountToken: ${BACKSTAGE_SERVICE_ACCOUNT_TOKEN}
           skipTLSVerify: true
@@ -164,7 +164,7 @@ And then we need to add the plugin to the backend. Open `packages/backend/src/in
 
 ```ts
 // Add in the linkerd backend plugin
-backend.add(import('@backstage-community/plugin-linkerd-backend'));
+backend.add(import("@backstage-community/plugin-linkerd-backend"));
 ```
 
 And then we can install the frontend plugin:
@@ -181,7 +181,7 @@ import {
   LinkerdDependenciesCard,
   LinkerdIsMeshedBanner,
   LinkerdEdgesTable,
-} from '@backstage-community/plugin-linkerd';
+} from "@backstage-community/plugin-linkerd";
 ```
 
 And now we want to use these components in the relevant places. The `isMeshedBanner` can be placed inside the `entityWarningContent` like so:
