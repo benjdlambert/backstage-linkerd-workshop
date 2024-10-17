@@ -95,26 +95,26 @@ Now it's worth noting that these permissions are pretty broad, but they're read-
 Let's apply the `deployment-1.yaml` first, to setup `namespace` and `service-accounts` for the Backstage application.
 
 ```bash
-kubectl apply -f deployment-1.yaml
+kubectl apply -f https://raw.githubusercontent.com/benjdlambert/backstage-linkerd-workshop/refs/heads/main/deployment-1.yaml
 ```
 
 And then finally to get the token that we need to use to configure the Kubernetes plugin, we can run:
 
 ```bash
-BACKSTAGE_SERVICE_ACCOUNT_TOKEN=$(kubectl -n default get secret backstage -o go-template='{{.data.token | base64decode}}')
+BACKSTAGE_SERVICE_ACCOUNT_TOKEN=$(kubectl -n backstage get secret backstage -o go-template='{{.data.token | base64decode}}')
 ```
 
-We can run the above command with `export` at the beginning in the same terminal as the `yarn dev` command, and then update the config in `app-config.yaml` underneath the `k8s` section. You can run `kubectl config view --minify --output json` to find the server URL if you don't know it already.
+We can run the above command with `export` at the beginning in the same terminal as the `yarn dev` command, and then update the config in `app-config.yaml` underneath the `k8s` section. You can run `kubectl config view --minify --output jsonpath='{.clusters[0].cluster.server}'` to find the server URL if you don't know it already.
 
 ```yaml
 kubernetes:
   serviceLocatorMethod:
-    type: "multiTenant"
+    type: multiTenant
   clusterLocatorMethods:
-    - type: "config"
+    - type: config
       clusters:
-        - name: "workshop-cluster"
-          authProvider: "serviceAccount"
+        - name: workshop-cluster
+          authProvider: serviceAccount
           url: SERVER_URL
           serviceAccountToken: ${BACKSTAGE_SERVICE_ACCOUNT_TOKEN}
           skipTLSVerify: true
@@ -128,21 +128,7 @@ Now when we go to one of the entities we should see the Kubernetes tab on the en
 
 Now that we've got kubernetes running, we can install the linkerd plugin. We can do this by installing both the backend and frontend plugin.
 
-Let's start with the backend plugin:
-
-```bash
-cd packages/backend
-yarn add @backstage-community/plugin-linkerd-backend
-```
-
-And then we need to add the plugin to the backend. Open `packages/backend/src/index.ts` and add the following before `backend.start()`.
-
-```ts
-// Add in the linkerd backend plugin
-backend.add(import("@backstage-community/plugin-linkerd-backend"));
-```
-
-And then we can install the frontend plugin:
+Let's start with the frontend plugin:
 
 ```bash
 cd packages/app
@@ -237,11 +223,31 @@ const serviceEntityPage = (
 
 ```
 
+So you should be able to see the `linkerd` tab on the entity page now, but you might see that it's telling us that the component is not meshed, this is a bit of a red herring, as it's actually because we haven't finshed setting up the linkerd plugin. There's also a backend plugin that we need to install which is going to be responsible for getting the metrics for the component.
+
+Let's do that now and install the backend part.
+
+```bash
+cd packages/backend
+yarn add @backstage-community/plugin-linkerd-backend
+```
+
+And then we need to add the plugin to the backend. Open `packages/backend/src/index.ts` and add the following before `backend.start()`.
+
+```ts
+// Add in the linkerd backend plugin
+backend.add(import("@backstage-community/plugin-linkerd-backend"));
+```
+
 Thats it!
 
 Now when you go to the entity page for the `linkerd` entity, you should see the `linkerd` tab populated with the edges and dependencies that are running in the cluster.
 
 ![linkerd](./assets/linkerd-plugin.png)
+
+### Step 3: Let's deploy this to the cluster
+
+
 
 ### Common problems:
 
