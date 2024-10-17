@@ -277,20 +277,49 @@ auth:
   providers:
     guest:
       dangerouslyAllowOutsideDevelopment: true
+
+# because we're not going to be running ssl in the cluster, we can disable the upgradeInsecureRequests
+backend:
+  csp:
+    upgradeInsecureRequests: false
 ```
 
 Because the deployment that we're going to rollout later with the container is going to use the `backstage` service account directly instead of the service account secret token, we can drop the requirement to have that in the config in the production config.
 
 We're also dangerously going to allow guest auth in production, which is not recommended, but for the purposes of this demo, it's fine, and we should really setup proper authentication.
 
+We're also going to disable the `upgradeInsecureRequests` in the `csp` config, because we're not going to be running SSL termination in the load balancer for this demo, you can remove this if you're deploying with SSL termination.
+
 Now we can go ahead and build the docker container:
 
 ```bash
+export IMAGE_NAME=benjaminl617/backstage-linkerd-workshop:2.0.0
 yarn build:all
-
-docker buildx build --platform=linux/amd64 -f packages/backend/Dockerfile -t benjaminl617/backstage-linkerd-workshop:2.0.0 .
-docker push benjaminl617/backstage-linkerd-workshop:2.0.0
+docker buildx build --platform=linux/amd64 -f packages/backend/Dockerfile -t $IMAGE_NAME .
+docker push $IMAGE_NAME
 ```
+
+A note here is that that `docker` command might be over complicated for what you need if you're not building on an Sillicon mac and deploying to a cluster running x86.
+
+You'll also wanna replace the `benjaminl617` with your own dockerhub username and point it to a docker repo that you have access to.
+
+Once this has built we should be able to deploy this to the cluster, by running the following command:
+
+```bash
+curl -s https://raw.githubusercontent.com/benjdlambert/backstage-linkerd-workshop/refs/heads/main/deployment-2.yaml | envsubst | kubectl apply -f -
+```
+
+This command will template in `IMAGE_NAME` too in the deployment, so make sure it's still set from the previous commands.
+
+Once the deployment has finished, you should be able to access the Backstage instance by running:
+
+```bash
+kubectl port-forward service/backstage 7000:7000
+```
+
+And hitting `http://localhost:7000` in your browser. :tada:
+
+
 ### Common problems:
 
 Might run into issues locally with the `linkerd viz` service not being able to be proxied to a running cluster:
