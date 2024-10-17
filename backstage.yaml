@@ -6,6 +6,7 @@ metadata:
   annotations:
     backstage.io/kubernetes-label-selector: service=backstage
     backstage.io/kubernetes-namespace: backstage
+  namespace: backstage
   # Example for optional annotations
   # annotations:
   #   github.com/project-slug: backstage/backstage
