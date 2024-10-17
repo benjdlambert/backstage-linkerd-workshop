@@ -1,0 +1,12 @@
+auth:
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+
+app:
+  baseUrl: http://74.220.21.132
+
+backend:
+  baseUrl: http://74.220.21.132
+  csp:
+    upgradeInsecureRequests: false
