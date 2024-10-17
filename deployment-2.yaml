@@ -25,7 +25,7 @@ spec:
     spec:
       serviceAccountName: backstage-service-account
       containers:
-        - image: docker.io/benjaminl617/backstage-linkerd-workshop:VERSION_HERE
+        - image: $IMAGE_NAME
           imagePullPolicy: IfNotPresent
           name: backstage
           ports:

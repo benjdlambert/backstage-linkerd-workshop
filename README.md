@@ -247,8 +247,50 @@ Now when you go to the entity page for the `linkerd` entity, you should see the 
 
 ### Step 3: Let's deploy this to the cluster
 
+No that we have everything working, we can try to go ahead and deploy this into the cluster.
 
+In order to deploy what we have locally, we need to build a docker container with the current source, push this somewhere and then deploy a manifest to the cluster. There's also the potential to use the [helm chart](https://github.com/backstage/charts) that Backstage provides, but you'll still need a custom image to rollout.
 
+First we need to clean up some config for the production build in `app-config.yaml`. 
+
+In a real life production scenario, you'd want to configure a [proper login and auth provider](https://backstage.io/docs/auth/identity-resolver). But for the purposes of this demo, we're just going to carry on using the [Guest Auth provider](https://backstage.io/docs/auth/guest/provider), but by default it's disabled in production.
+
+Firstly, we can go ahead and delete most of the contents of `app-config.production.yaml` as pretty much all of the config that we have so far will be re-used in production. Again, normally you would also configure a PostgreSQL database for the Backstage deployment, but we're just going to use the default inmemory `sqlite` database for this demo.
+
+The `app-config.production.yaml` file should be cleaned, and have the following contents:
+
+```yaml
+# reconfigure the kubernetes plugin to remove the service account token
+kubernetes:
+  serviceLocatorMethod:
+    type: "multiTenant"
+  clusterLocatorMethods:
+    - type: "config"
+      clusters:
+        - name: "workshop-cluster"
+          authProvider: "serviceAccount"
+          url: https://74.220.20.169:6443
+          skipTLSVerify: true
+
+# enable guest auth in production
+auth:
+  providers:
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+```
+
+Because the deployment that we're going to rollout later with the container is going to use the `backstage` service account directly instead of the service account secret token, we can drop the requirement to have that in the config in the production config.
+
+We're also dangerously going to allow guest auth in production, which is not recommended, but for the purposes of this demo, it's fine, and we should really setup proper authentication.
+
+Now we can go ahead and build the docker container:
+
+```bash
+yarn build:all
+
+docker buildx build --platform=linux/amd64 -f packages/backend/Dockerfile -t benjaminl617/backstage-linkerd-workshop:2.0.0 .
+docker push benjaminl617/backstage-linkerd-workshop:2.0.0
+```
 ### Common problems:
 
 Might run into issues locally with the `linkerd viz` service not being able to be proxied to a running cluster:
