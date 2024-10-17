@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    service: backstage
+  name: backstage
+  namespace: backstage
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      service: backstage
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        service: backstage
+    spec:
+      serviceAccountName: backstage-service-account
+      containers:
+        - image: docker.io/benjaminl617/backstage-linkerd-workshop:VERSION_HERE
+          imagePullPolicy: IfNotPresent
+          name: backstage
+          ports:
+            - containerPort: 7007
+              name: http
+              protocol: TCP
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: backstage
+  namespace: backstage
+  labels:
+    service: backstage
+spec:
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 7007
+  selector:
+    service: backstage
+  type: LoadBalancer

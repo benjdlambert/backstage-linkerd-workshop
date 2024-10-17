@@ -8,10 +8,6 @@ Make sure that you've followed the setup guide for linkerd + backstage, and have
 npx @backstage/create-app@latest
 ```
 
-### Architecture
-
-TODO
-
 ### Step 1: Populate the Catalog
 
 First off, we're going to want to populate the catalog with some entities that we can use to visualize the linkerd service mesh. We're going to want to add some entities that are respective of the services that we have running in the cluster.
@@ -30,9 +26,43 @@ spec:
   owner: team-a
 ```
 
-TODO
+This represents a component in the Backstage Software Catalog, and you can read more about how to define your own Entities in the [Backstage documentation](https://backstage.io/docs/features/software-catalog/descriptor-format).
 
-https://github.com/kflynn/faces-rollouts/blob/main/catalog.yaml
+We need to represent what we already have running in the cluster in a `catalog-info.yaml` form, normally this would be stored alongside the code for your services with the relevant metadata just checked into the repo, but for the purposes of this demo, there's a file called [example-catalog.yaml](./example-catalog.yaml) that you can use to populate the catalog.
+
+If we take a snippet from the demo file, you can see that first we defined the relevant Backstage metadata for an entity, as well as some other `annotations` which tell both the `kubernetes` plugin in Backstage and the `linkerd` one how to find the relevant resources in the cluster.
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: faces-gui
+  description: The Faces GUI
+  namespace: faces
+  annotations:
+    # this identifies the any resources in the cluster that have the label service: faces-gui in the cluster
+    backstage.io/kubernetes-label-selector: service=faces-gui
+    # this identifies the namespace the resources are running in
+    backstage.io/kubernetes-namespace: faces
+    github.com/project-slug: BuoyantIO/faces-demo
+  links:
+    - url: http://localhost/faces/
+      title: Faces GUI
+spec:
+  type: website
+  lifecycle: production
+  owner: user:default/guest
+  system: faces
+```
+
+Let's go and add this file to the Catalog, you do this by heading over the `app-config.yaml` file and adding a new location under `catalog.locations` that looks like the following:
+
+```yaml
+  - type: url
+    target: https://github.com/benjdlambert/backstage-linkerd-workshop/blob/main/example-catalog.yaml
+```
+
+![with-catalog](./assets/with-catalog.png)
 
 ### Step -1: Install the Kubernetes Backend Plugin (if not already installed)
 
@@ -58,72 +88,15 @@ The Kubernetes plugin is going to act as a proxy so that we can communicate with
 
 Theres also some [extensive configuration documentation](https://backstage.io/docs/plugins/kubernetes/configuration) available on the Backstage.io microsite.
 
-First off, we need to create a service account in the Kubernetes cluster that we can use to access the API. We can do this by creating a new service account and cluster role binding:
-
-```bash
-kubectl create sa -n default backstage-service-account
-
-kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: backstage
-  namespace: default
-  annotations:
-    kubernetes.io/service-account.name: backstage-service-account
-type: kubernetes.io/service-account-token
-EOF
-
-kubectl apply -f - <<EOF
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: backstage-read-only
-  namespace: default
-rules:
-  - apiGroups:
-      - '*'
-    resources:
-      - pods
-      - configmaps
-      - services
-      - deployments
-      - replicasets
-      - horizontalpodautoscalers
-      - ingresses
-      - statefulsets
-      - limitranges
-      - resourcequotas
-      - daemonsets
-      - services/proxy
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - batch
-    resources:
-      - jobs
-      - cronjobs
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - metrics.k8s.io
-    resources:
-      - pods
-    verbs:
-      - get
-      - list
-EOF
-
-kubectl create clusterrolebinding -n default backstage-read-only \
-  --clusterrole=backstage-read-only \
-  --serviceaccount=default:backstage-service-account
-```
+Included in this repo in the file [deployment-1.yaml](./deployment-1.yaml) is a Kubernetes deployment that will create a service account and a role that will allow the Backstage Kubernetes plugin to access the Kubernetes API. It also creates a secret so that we can get a token locally to communicate with a running cluster, so that we can run the linkerd and k8s plugins against a running cluster.
 
 Now it's worth noting that these permissions are pretty broad, but they're read-only. You can adjust these permissions to be more restrictive if you'd like.
+
+Let's apply the `deployment-1.yaml` first, to setup `namespace` and `service-accounts` for the Backstage application.
+
+```bash
+kubectl apply -f deployment-1.yaml
+```
 
 And then finally to get the token that we need to use to configure the Kubernetes plugin, we can run:
 
@@ -148,6 +121,8 @@ kubernetes:
 ```
 
 Now when we go to one of the entities we should see the Kubernetes tab on the entity page is populated with the pods and services that are deployed and running in the cluster.
+
+![k8s](./assets/k8s-plugin.png)
 
 ### Step 2: Install the linkerd plugin
 
@@ -250,15 +225,23 @@ const serviceEntityPage = (
       title="linkerd"
       if={isKubernetesAvailable}
     >
-      <>
-        <LinkerdEdgesTable />
-        <LinkerdDependenciesCard />
-      </>
+      <Grid container>
+        <Grid item xs={5}>
+          <LinkerdEdgesTable />
+        </Grid>
+        <Grid item xs={7}>
+          <LinkerdDependenciesCard />
+        </Grid>
+      </Grid>
     </EntityLayout.Route>
 
 ```
 
 Thats it!
+
+Now when you go to the entity page for the `linkerd` entity, you should see the `linkerd` tab populated with the edges and dependencies that are running in the cluster.
+
+![linkerd](./assets/linkerd-plugin.png)
 
 ### Common problems:
 
