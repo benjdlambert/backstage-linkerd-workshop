@@ -5,7 +5,7 @@ metadata:
   description: An example of a Backstage application.
   annotations:
     backstage.io/kubernetes-label-selector: service=backstage
-    backstage.io/kubernetes-namespace: faces
+    backstage.io/kubernetes-namespace: backstage
   # Example for optional annotations
   # annotations:
   #   github.com/project-slug: backstage/backstage
