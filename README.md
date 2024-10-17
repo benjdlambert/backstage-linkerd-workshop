@@ -319,6 +319,16 @@ kubectl port-forward service/backstage 7000:7000
 
 And hitting `http://localhost:7000` in your browser. :tada:
 
+If you want to expose your Backstage instance beyond portforward, you can use a `LoadBalancer` service type, or an `Ingress` resource to expose the service to the internet.
+
+A note however, is that you will need to update `backend.baseUrl` and `app.baseUrl` in the `app-config.production.yaml` file to point to the correct URL that the service is exposed on, and make sure that you follow the commands to rebuild the docker container and push a new version.
+
+```yaml
+backend:
+  baseUrl: http://backstage.mycompany.com
+app:
+  baseUrl: http://backstage.mycompany.com
+```
 
 ### Common problems:
 
